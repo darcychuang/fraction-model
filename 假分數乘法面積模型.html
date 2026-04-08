@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="分數乘法">
+<title>分數乘法：面積模型</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:-apple-system,'PingFang TC','Helvetica Neue',sans-serif;background:#fffbeb;padding:16px 12px 32px;}
+/* 標題 */
+#app-title{font-size:20px;font-weight:900;color:#1e293b;text-align:center;margin-bottom:4px;}
+#app-sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:14px;}
+/* 主卡片 */
+.card{background:#fff;border-radius:20px;border:2px solid #fde68a;overflow:hidden;max-width:900px;margin:0 auto;}
+/* ── 輸入區 ── */
+.input-wrap{background:linear-gradient(to right,#f0fdf4,#eff6ff);padding:14px 10px;border-bottom:1px solid #fef3c7;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:12px;}
+.frac-group{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.frac-pill{font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;}
+.pill-green{background:#dcfce7;color:#15803d;}
+.pill-blue{background:#dbeafe;color:#1d4ed8;}
+.pill-teal{background:#ccfbf1;color:#0f766e;}
+.frac-inner{background:#fff;border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.border-green{border:2px solid #86efac;}
+.border-blue{border:2px solid #93c5fd;}
+.border-teal{border:2px solid #2dd4bf;background:#f0fdfa;}
+.stepper{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.stepper-label{font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;}
+.stepper-row{display:flex;align-items:center;gap:6px;}
+.step-btn{width:40px;height:40px;border-radius:8px;font-size:22px;font-weight:900;cursor:pointer;background:#fff;display:flex;align-items:center;justify-content:center;border:2px solid;-webkit-user-select:none;user-select:none;touch-action:manipulation;}
+.step-btn-g{border-color:#16a34a;color:#16a34a;}
+.step-btn-b{border-color:#1d4ed8;color:#1d4ed8;}
+.step-val{width:52px;height:46px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;border-radius:10px;border:2px solid;}
+.step-val-g{border-color:#16a34a;color:#16a34a;}
+.step-val-b{border-color:#1d4ed8;color:#1d4ed8;}
+.frac-bar{height:3px;border-radius:2px;}
+.frac-display{display:flex;flex-direction:column;align-items:center;line-height:1.1;}
+.mul-sign{font-size:30px;font-weight:900;color:#94a3b8;margin-bottom:4px;align-self:center;}
+/* ── 步驟控制 ── */
+.step-ctrl{padding:10px 14px;border-bottom:1px solid #fef3c7;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.dot-row{display:flex;align-items:center;gap:4px;}
+.dot{width:28px;height:28px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;transition:background 0.2s,transform 0.2s;}
+.dot-done{background:#22c55e;border-color:#16a34a;color:#fff;}
+.dot-active{background:#f59e0b;border-color:#b45309;color:#fff;transform:scale(1.12);}
+.dot-todo{background:#fff;border-color:#cbd5e1;color:#94a3b8;}
+.dot-line{width:12px;height:2px;transition:background 0.3s;}
+.btn-group{display:flex;gap:8px;}
+.ctrl-btn{padding:9px 14px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid;touch-action:manipulation;-webkit-user-select:none;user-select:none;}
+.btn-prev{border-color:#cbd5e1;background:#fff;color:#475569;}
+.btn-next{border-color:#b45309;background:#f59e0b;color:#fff;}
+.btn-reset{border-color:#fca5a5;background:#fff;color:#ef4444;}
+.ctrl-btn:disabled{opacity:0.35;cursor:not-allowed;}
+/* ── 步驟說明 ── */
+.step-desc{padding:10px 14px 12px;background:#fffbeb;border-bottom:1px solid #fef3c7;display:flex;align-items:flex-start;gap:10px;}
+.step-badge{width:24px;height:24px;border-radius:50%;background:#f59e0b;color:#fff;font-size:12px;font-weight:900;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;}
+.step-title{font-weight:900;color:#1e293b;font-size:14px;}
+.step-body{color:#64748b;font-size:13px;margin-top:2px;line-height:1.45;}
+/* ── 畫布區 ── */
+.canvas-area{display:flex;justify-content:center;overflow-x:auto;padding:20px 12px;background:#FFF8F0;-webkit-overflow-scrolling:touch;}
+/* ── 算式區 ── */
+.formula-area{background:#f0fdfa;border-top:2px solid #99f6e4;padding:14px;}
+.formula-title{font-weight:900;color:#1e293b;font-size:14px;margin-bottom:12px;}
+.formula-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+.formula-chip{border-radius:12px;padding:8px 14px;border:2px solid;}
+.chip-g{background:#dcfce7;border-color:#86efac;}
+.chip-b{background:#dbeafe;border-color:#93c5fd;}
+.chip-y{background:#fef3c7;border-color:#fcd34d;}
+.chip-t{background:#ccfbf1;border-color:#2dd4bf;}
+.chip-t2{background:#99f6e4;border-color:#0d9488;}
+.formula-op{font-size:20px;font-weight:900;color:#94a3b8;}
+.formula-tip{margin-top:10px;background:#ccfbf1;border:1px solid #5eead4;border-radius:10px;padding:10px 14px;font-size:13px;color:#0f766e;line-height:1.45;}
+/* ── 圖例 ── */
+.legend-area{padding:10px 14px;background:#fff;border-top:1px solid #f1f5f9;display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:#64748b;}
+.legend-item{display:flex;align-items:center;gap:6px;}
+.legend-dot{width:13px;height:13px;border-radius:3px;flex-shrink:0;}
+/* 空白提示 */
+.empty-hint{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 0;color:#94a3b8;}
+.empty-icon{font-size:52px;margin-bottom:14px;}
+.empty-text{font-size:15px;font-weight:700;color:#64748b;}
+.empty-sub{font-size:12px;margin-top:4px;}
+</style>
+</head>
+<body>
+
+<p id="app-title">📐 分數乘法：面積模型</p>
+<p id="app-sub">用視覺化面積模型，直觀理解分數相乘的意義</p>
+
+<div class="card">
+
+  <!-- 輸入區 -->
+  <div class="input-wrap" id="input-wrap">
+
+    <!-- 被乘數 A/B -->
+    <div class="frac-group">
+      <span class="frac-pill pill-green">被乘數</span>
+      <div class="frac-inner border-green">
+        <div class="stepper">
+          <span class="stepper-label">分子 A</span>
+          <div class="stepper-row">
+            <button class="step-btn step-btn-g" id="btnA-" >−</button>
+            <div class="step-val step-val-g" id="valA">6</div>
+            <button class="step-btn step-btn-g" id="btnA+">+</button>
+          </div>
+        </div>
+        <div class="frac-bar" style="width:58px;background:#1e293b;margin:2px auto;"></div>
+        <div class="stepper">
+          <span class="stepper-label">分母 B</span>
+          <div class="stepper-row">
+            <button class="step-btn step-btn-g" id="btnB-">−</button>
+            <div class="step-val step-val-g" id="valB">5</div>
+            <button class="step-btn step-btn-g" id="btnB+">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="frac-display" id="dispAB">
+        <span style="font-size:14px;font-weight:900;color:#15803d;" id="dA">6</span>
+        <div class="frac-bar" style="width:30px;background:#15803d;margin:3px auto;"></div>
+        <span style="font-size:14px;font-weight:900;color:#15803d;" id="dB">5</span>
+      </div>
+    </div>
+
+    <span class="mul-sign">×</span>
+
+    <!-- 乘數 C/D -->
+    <div class="frac-group">
+      <span class="frac-pill pill-blue">乘數</span>
+      <div class="frac-inner border-blue">
+        <div class="stepper">
+          <span class="stepper-label">分子 C</span>
+          <div class="stepper-row">
+            <button class="step-btn step-btn-b" id="btnC-">−</button>
+            <div class="step-val step-val-b" id="valC">7</div>
+            <button class="step-btn step-btn-b" id="btnC+">+</button>
+          </div>
+        </div>
+        <div class="frac-bar" style="width:58px;background:#1e293b;margin:2px auto;"></div>
+        <div class="stepper">
+          <span class="stepper-label">分母 D</span>
+          <div class="stepper-row">
+            <button class="step-btn step-btn-b" id="btnD-">−</button>
+            <div class="step-val step-val-b" id="valD">4</div>
+            <button class="step-btn step-btn-b" id="btnD+">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="frac-display">
+        <span style="font-size:14px;font-weight:900;color:#1d4ed8;" id="dC">7</span>
+        <div class="frac-bar" style="width:30px;background:#1d4ed8;margin:3px auto;"></div>
+        <span style="font-size:14px;font-weight:900;color:#1d4ed8;" id="dD">4</span>
+      </div>
+    </div>
+
+    <!-- 等號＋答案（第4步才顯示） -->
+    <span class="mul-sign" id="eq-sign" style="display:none;">=</span>
+    <div class="frac-group" id="ans-group" style="display:none;">
+      <span class="frac-pill pill-teal">答案</span>
+      <div class="frac-inner border-teal">
+        <div class="frac-display">
+          <span style="font-size:24px;font-weight:900;color:#0f766e;" id="ansN">42</span>
+          <div class="frac-bar" style="width:48px;background:#0f766e;margin:4px auto;"></div>
+          <span style="font-size:24px;font-weight:900;color:#0f766e;" id="ansD">20</span>
+        </div>
+        <div id="simp-block" style="display:none;margin-top:6px;padding-top:6px;border-top:1px solid #99f6e4;text-align:center;">
+          <div style="font-size:10px;color:#5eead4;font-weight:700;margin-bottom:4px;">最簡分數</div>
+          <div class="frac-display">
+            <span style="font-size:20px;font-weight:900;color:#134e4a;" id="simpN">21</span>
+            <div class="frac-bar" style="width:38px;background:#134e4a;margin:4px auto;"></div>
+            <span style="font-size:20px;font-weight:900;color:#134e4a;" id="simpD">10</span>
+          </div>
+        </div>
+      </div>
+      <span style="font-size:11px;color:#94a3b8;" id="ansDec">≈ 2.1000</span>
+    </div>
+
+  </div><!-- /input-wrap -->
+
+  <!-- 步驟控制 -->
+  <div class="step-ctrl">
+    <div class="dot-row" id="dot-row"></div>
+    <div class="btn-group">
+      <button class="ctrl-btn btn-prev" id="btn-prev" onclick="prevStep()">← 上一步</button>
+      <button class="ctrl-btn btn-next" id="btn-next" onclick="nextStep()">下一步 →</button>
+      <button class="ctrl-btn btn-reset" onclick="resetStep()">重置</button>
+    </div>
+  </div>
+
+  <!-- 步驟說明 -->
+  <div class="step-desc">
+    <div class="step-badge" id="step-badge">0</div>
+    <div>
+      <div class="step-title" id="step-title">準備就緒</div>
+      <div class="step-body" id="step-body">調整分數後按「下一步」開始。</div>
+    </div>
+  </div>
+
+  <!-- 畫布 -->
+  <div class="canvas-area">
+    <svg id="main-svg"></svg>
+  </div>
+
+  <!-- 算式（第4步） -->
+  <div class="formula-area" id="formula-area" style="display:none;">
+    <div class="formula-title">✦ 計算過程</div>
+    <div class="formula-row" id="formula-row"></div>
+    <div class="formula-tip" id="formula-tip"></div>
+  </div>
+
+  <!-- 圖例 -->
+  <div class="legend-area" id="legend-area" style="display:none;"></div>
+
+</div><!-- /card -->
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  狀態
+// ══════════════════════════════════════════════════════════════
+var A=6, B=5, C=7, D=4, step=0, blueAnim=0, rafId=null;
+var MAX_STEP = 4;
+var GR="#4ADE80", BL="#3B82F6", TL="#0E9488", GD="#1e293b", PP="#FFF8F0";
+var CELL=44, GAP=14, VGAP=10, PAD=28, LABELH=54;
+
+// ══════════════════════════════════════════════════════════════
+//  數學工具
+// ══════════════════════════════════════════════════════════════
+function gcd(a,b){ return b===0?a:gcd(b,a%b); }
+function simplify(n,d){ var g=gcd(Math.abs(n),Math.abs(d)); return [n/g,d/g]; }
+function derived(){
+  var rem=A%B, hasRem=rem>0, nGreen=Math.ceil(A/B);
+  var resNum=A*C, resDen=B*D, s=simplify(resNum,resDen);
+  var nLayers=Math.ceil(C/D), ovLayers=nLayers-1;
+  var blueWhole=Math.floor(resNum/resDen), blueRem=resNum%resDen;
+  return {rem:rem,hasRem:hasRem,nGreen:nGreen,resNum:resNum,resDen:resDen,
+          sNum:s[0],sDen:s[1],nLayers:nLayers,ovLayers:ovLayers,
+          blueWhole:blueWhole,blueRem:blueRem};
+}
+
+// ══════════════════════════════════════════════════════════════
+//  按鈕事件綁定（steppers）
+// ══════════════════════════════════════════════════════════════
+function bindBtn(id, fn){
+  var el=document.getElementById(id);
+  el.addEventListener('click', fn);
+  el.addEventListener('touchstart', function(e){ e.preventDefault(); fn(); }, {passive:false});
+}
+function clamp(v,mn,mx){ return Math.max(mn,Math.min(mx,v)); }
+
+bindBtn('btnA-', function(){ A=clamp(A-1,1,20); resetStep(); });
+bindBtn('btnA+', function(){ A=clamp(A+1,1,20); resetStep(); });
+bindBtn('btnB-', function(){ B=clamp(B-1,1,10); resetStep(); });
+bindBtn('btnB+', function(){ B=clamp(B+1,1,10); resetStep(); });
+bindBtn('btnC-', function(){ C=clamp(C-1,1,20); resetStep(); });
+bindBtn('btnC+', function(){ C=clamp(C+1,1,20); resetStep(); });
+bindBtn('btnD-', function(){ D=clamp(D-1,1,10); resetStep(); });
+bindBtn('btnD+', function(){ D=clamp(D+1,1,10); resetStep(); });
+
+// ══════════════════════════════════════════════════════════════
+//  步驟控制
+// ══════════════════════════════════════════════════════════════
+function nextStep(){ if(step<MAX_STEP){ step++; startAnim(); render(); } }
+function prevStep(){ if(step>0){ step--; blueAnim=(step<2?0:1); cancelAnimationFrame(rafId); render(); } }
+function resetStep(){ step=0; blueAnim=0; cancelAnimationFrame(rafId); render(); }
+
+function startAnim(){
+  cancelAnimationFrame(rafId);
+  if(step===2){
+    blueAnim=0;
+    var t0=performance.now();
+    function tick(now){
+      var t=Math.min((now-t0)/950,1);
+      blueAnim=1-Math.pow(1-t,3);
+      drawSVG();
+      if(t<1) rafId=requestAnimationFrame(tick);
+    }
+    rafId=requestAnimationFrame(tick);
+  } else {
+    blueAnim=(step<2?0:1);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SVG 工具
+// ══════════════════════════════════════════════════════════════
+var NS="http://www.w3.org/2000/svg";
+function svgEl(tag,attrs){
+  var el=document.createElementNS(NS,tag);
+  for(var k in attrs) el.setAttribute(k,attrs[k]);
+  return el;
+}
+function mkRect(x,y,w,h,fill,stroke,sw){
+  var a={x:x,y:y,width:w,height:h,fill:fill||"none"};
+  if(stroke){a.stroke=stroke;a['stroke-width']=sw||1;}
+  return svgEl('rect',a);
+}
+function mkLine(x1,y1,x2,y2,s,sw,dash){
+  var a={x1:x1,y1:y1,x2:x2,y2:y2,stroke:s,'stroke-width':sw};
+  if(dash) a['stroke-dasharray']=dash;
+  return svgEl('line',a);
+}
+function mkText(x,y,str,sz,fw,fill,anchor){
+  var el=svgEl('text',{x:x,y:y,'font-size':sz,'font-weight':fw,fill:fill,
+    'text-anchor':anchor||'middle','font-family':"-apple-system,'PingFang TC',sans-serif"});
+  el.textContent=str; return el;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  繪製 SVG
+// ══════════════════════════════════════════════════════════════
+function drawSVG(){
+  var svg=document.getElementById('main-svg');
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  var d=derived();
+
+  // 空白提示
+  if(step===0){
+    svg.setAttribute('width','300'); svg.setAttribute('height','80');
+    svg.appendChild(mkRect(0,0,300,80,PP));
+    svg.appendChild(mkText(150,50,'按「下一步」開始視覺化',14,700,'#64748b'));
+    return;
+  }
+
+  // 尺寸計算
+  var sqW=B*CELL, sqH=D*CELL;
+  var colH=sqH+d.ovLayers*(VGAP+sqH);
+  var hu=(step>=3)?(d.blueWhole+(d.blueRem>0?1:0)):d.nGreen;
+  var svgW=Math.max(1,hu)*sqW+Math.max(0,hu-1)*GAP+PAD*2;
+  var svgH=colH+PAD*2+LABELH+(step>=3?28:0);
+  svg.setAttribute('width',svgW); svg.setAttribute('height',svgH);
+  svg.appendChild(mkRect(0,0,svgW,svgH,PP));
+
+  var ux=function(u){ return PAD+u*(sqW+GAP); };
+  var oy=PAD+LABELH;
+
+  // ── 步驟 1、2：綠色方格＋藍色疊加 ──────────────────────────
+  if(step<=2){
+    for(var u=0;u<d.nGreen;u++){
+      var x0=ux(u), isLast=(u===d.nGreen-1);
+      var gCols=(isLast&&d.hasRem)?d.rem:B;
+      var visRowsF=(step>=2)?(blueAnim*C):0;
+
+      // 紙張底色
+      svg.appendChild(mkRect(x0,oy,sqW,sqH,PP));
+
+      // 綠色填充
+      if(step>=1){
+        for(var c=0;c<gCols;c++)
+          svg.appendChild(mkRect(x0+c*CELL,oy,CELL,sqH,GR));
+      }
+
+      // 藍色填充（動畫）
+      if(step>=2){
+        var blueInMain=Math.min(visRowsF,D);
+        var bfr=Math.floor(blueInMain), bfrac=blueInMain-bfr;
+        if(bfr>0)
+          svg.appendChild(mkRect(x0,oy,gCols*CELL,bfr*CELL,BL));
+        if(bfrac>0&&bfr<D)
+          svg.appendChild(mkRect(x0,oy+bfr*CELL,gCols*CELL,bfrac*CELL,BL));
+      }
+
+      // 水平格線
+      for(var r=0;r<=D;r++)
+        svg.appendChild(mkLine(x0,oy+r*CELL,x0+sqW,oy+r*CELL,GD,
+          r===0||r===D?2:step>=2?0.5:0));
+      // 垂直格線
+      for(var c=0;c<=B;c++)
+        svg.appendChild(mkLine(x0+c*CELL,oy,x0+c*CELL,oy+sqH,GD,
+          c===0||c===B?2:0.5));
+      // 邊框
+      svg.appendChild(mkRect(x0,oy,sqW,sqH,'none',GD,2.5));
+
+      // 延伸層（藍色超過 D 行時往下）
+      for(var layer=1;layer<d.nLayers;layer++){
+        var layerRowStart=layer*D;
+        var layerY=oy+layer*(sqH+VGAP);
+        var blueInLayer=Math.max(0,Math.min(D,visRowsF-layerRowStart));
+        if(blueInLayer<=0&&blueAnim<1) continue;
+        var bf2=Math.floor(blueInLayer), bfrac2=blueInLayer-bf2;
+        svg.appendChild(mkRect(x0,layerY,gCols*CELL,sqH,PP));
+        if(bf2>0)
+          svg.appendChild(mkRect(x0,layerY,gCols*CELL,bf2*CELL,BL));
+        if(bfrac2>0&&bf2<D)
+          svg.appendChild(mkRect(x0,layerY+bf2*CELL,gCols*CELL,bfrac2*CELL,BL));
+        for(var r=0;r<=D;r++)
+          svg.appendChild(mkLine(x0,layerY+r*CELL,x0+gCols*CELL,layerY+r*CELL,GD,
+            r===0||r===D?2:0.5));
+        for(var c=0;c<=gCols;c++)
+          svg.appendChild(mkLine(x0+c*CELL,layerY,x0+c*CELL,layerY+sqH,GD,
+            c===0||c===gCols?2:0.5));
+        svg.appendChild(mkRect(x0,layerY,gCols*CELL,sqH,'none',GD,2.5));
+      }
+
+      // 便利貼標籤
+      if(step>=1){
+        var isWhole=(!d.hasRem||!isLast);
+        var noteText=isWhole?('完整 ('+B+'/'+B+')'):'部分 ('+d.rem+'/'+B+')';
+        var noteBg=isWhole?'#BBF7D0':'#FDE68A';
+        var nw=Math.max(70,sqW-4), nx=x0+sqW/2-nw/2, ny=oy-48;
+        var g=svgEl('g',{});
+        g.appendChild(mkRect(nx,ny,nw,32,noteBg,'#92400E',1));
+        g.appendChild(mkText(x0+sqW/2,ny+20,noteText,10,700,'#1a1a1a'));
+        svg.appendChild(g);
+      }
+
+      // 行數標示（第一欄左側）
+      if(step>=2&&u===0){
+        var totalBlueH=C*CELL+(d.nLayers-1)*VGAP;
+        var bx=x0-20;
+        svg.appendChild(mkLine(bx+8,oy,bx+8,oy+totalBlueH,BL,2,'4,3'));
+        svg.appendChild(mkText(bx,oy+totalBlueH/2+5,''+C,12,900,BL));
+      }
+    }
+  }
+
+  // ── 步驟 3、4：合併藍色 ──────────────────────────────────────
+  if(step>=3){
+    var fillColor=(step===4)?TL:BL;
+    var showUnits=d.blueWhole+(d.blueRem>0?1:0);
+    for(var u=0;u<showUnits;u++){
+      var x0=ux(u), isFull=(u<d.blueWhole);
+      svg.appendChild(mkRect(x0,oy,sqW,sqH,PP));
+
+      // 欄優先（由上到下，由左到右）填色
+      var totalCells=isFull?(B*D):d.blueRem;
+      var left=totalCells, done=false;
+      for(var c=0;c<B&&!done;c++){
+        for(var r=0;r<D&&!done;r++){
+          if(left<=0){done=true;break;}
+          svg.appendChild(mkRect(x0+c*CELL,oy+r*CELL,CELL,CELL,fillColor));
+          left--;
+        }
+      }
+
+      // 格線
+      for(var r=0;r<=D;r++)
+        svg.appendChild(mkLine(x0,oy+r*CELL,x0+sqW,oy+r*CELL,GD,
+          r===0||r===D?2:0.5));
+      for(var c=0;c<=B;c++)
+        svg.appendChild(mkLine(x0+c*CELL,oy,x0+c*CELL,oy+sqH,GD,
+          c===0||c===B?2:0.5));
+      svg.appendChild(mkRect(x0,oy,sqW,sqH,'none',GD,2.5));
+
+      // 便利貼
+      var nw=Math.max(70,sqW-4), nx=x0+sqW/2-nw/2, ny=oy-48;
+      var noteBg2=(step===4)?'#CCFBF1':'#DBEAFE';
+      var noteBdr=(step===4)?'#0f766e':'#1d4ed8';
+      var noteTxt=(step===4)?'#134e4a':'#1e40af';
+      var lbl=isFull?('完整 ('+B*D+'/'+B*D+')'):'部分 ('+d.blueRem+'/'+B*D+')';
+      var g=svgEl('g',{});
+      g.appendChild(mkRect(nx,ny,nw,32,noteBg2,noteBdr,1));
+      g.appendChild(mkText(x0+sqW/2,ny+20,lbl,10,700,noteTxt));
+      svg.appendChild(g);
+    }
+
+    // 底部說明文字
+    var sumColor=(step===4)?TL:BL;
+    var sumLabel=(step===4)?'交疊格數':'藍色格數';
+    var simpStr=(d.resNum!==d.sNum)?(' = '+d.sNum+'/'+d.sDen):'';
+    svg.appendChild(mkText(PAD,oy+sqH+20,
+      sumLabel+'：'+d.resNum+' 格 ÷ 每格 '+d.resDen+' 格 = '+d.resNum+'/'+d.resDen+simpStr,
+      12,700,sumColor,'start'));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  渲染整體 UI
+// ══════════════════════════════════════════════════════════════
+function render(){
+  var d=derived();
+
+  // 步進器數字
+  document.getElementById('valA').textContent=A;
+  document.getElementById('valB').textContent=B;
+  document.getElementById('valC').textContent=C;
+  document.getElementById('valD').textContent=D;
+  document.getElementById('dA').textContent=A;
+  document.getElementById('dB').textContent=B;
+  document.getElementById('dC').textContent=C;
+  document.getElementById('dD').textContent=D;
+
+  // 答案欄（第4步）
+  var eqSign=document.getElementById('eq-sign');
+  var ansGroup=document.getElementById('ans-group');
+  if(step===MAX_STEP){
+    eqSign.style.display='block';
+    ansGroup.style.display='flex';
+    document.getElementById('ansN').textContent=d.resNum;
+    document.getElementById('ansD').textContent=d.resDen;
+    document.getElementById('ansDec').textContent='≈ '+(d.resNum/d.resDen).toFixed(4);
+    var simpBlock=document.getElementById('simp-block');
+    if(d.resNum!==d.sNum){
+      simpBlock.style.display='block';
+      document.getElementById('simpN').textContent=d.sNum;
+      document.getElementById('simpD').textContent=d.sDen;
+    } else {
+      simpBlock.style.display='none';
+    }
+  } else {
+    eqSign.style.display='none';
+    ansGroup.style.display='none';
+  }
+
+  // 步驟圓點
+  var dotRow=document.getElementById('dot-row');
+  dotRow.innerHTML='';
+  for(var i=0;i<=MAX_STEP;i++){
+    var dot=document.createElement('div');
+    dot.className='dot '+(step===i?'dot-active':step>i?'dot-done':'dot-todo');
+    dot.textContent=i;
+    dotRow.appendChild(dot);
+    if(i<MAX_STEP){
+      var line=document.createElement('div');
+      line.className='dot-line';
+      line.style.background=step>i?'#22c55e':'#e2e8f0';
+      dotRow.appendChild(line);
+    }
+  }
+
+  // 按鈕狀態
+  document.getElementById('btn-prev').disabled=(step===0);
+  document.getElementById('btn-next').disabled=(step===MAX_STEP);
+
+  // 步驟說明
+  var stepInfos=[
+    {title:'準備就緒', body:'調整分數後按「下一步」開始。'},
+    {title:'第 1 步：被乘數',
+     body:d.nGreen+'個正方形各分成'+B+'等份（垂直），塗滿'+A+'格，表示'+A+'/'+B+'。'},
+    {title:'第 2 步：乘數疊加',
+     body:'每格再分成'+D+'行，標示為藍色，乘數的分子顯示共有'+C+'行，超過的行數補於下方。'},
+    {title:'第 3 步：合併整理',
+     body:'綠色退去，藍色集中到左側，清楚看出乘積格數'+d.resNum+
+       '（'+d.blueWhole+'完整'+(d.blueRem>0?'＋部分'+d.blueRem+'格':'')+'）。'},
+    {title:'第 4 步：計算結果',
+     body:'乘積格數 = '+A+'×'+C+' = '+d.resNum+'格，完整格數分成 = '+B+'×'+D+' = '+d.resDen+'。答案：'+
+       d.resNum+'/'+d.resDen+(d.resNum!==d.sNum?' = '+d.sNum+'/'+d.sDen:'')},
+  ];
+  document.getElementById('step-badge').textContent=step;
+  document.getElementById('step-title').textContent=stepInfos[step].title;
+  document.getElementById('step-body').textContent=stepInfos[step].body;
+
+  // 畫 SVG
+  drawSVG();
+
+  // 算式（第4步）
+  var formulaArea=document.getElementById('formula-area');
+  if(step===MAX_STEP){
+    formulaArea.style.display='block';
+    function chip(cls,n,d2,nc,bc,sz,bw){
+      return '<div class="formula-chip '+cls+'">'
+        +'<div style="font-size:'+sz+'px;font-weight:900;color:'+nc+';text-align:center;">'+n+'</div>'
+        +'<div style="height:2px;background:'+bc+';border-radius:2px;margin:4px auto;width:'+bw+'px;"></div>'
+        +'<div style="font-size:'+sz+'px;font-weight:900;color:'+nc+';text-align:center;">'+d2+'</div>'
+        +'</div>';
+    }
+    document.getElementById('formula-row').innerHTML=
+      chip('chip-g',A,B,'#15803d','#15803d',20,36)
+      +'<span class="formula-op">×</span>'
+      +chip('chip-b',C,D,'#1d4ed8','#1d4ed8',20,36)
+      +'<span class="formula-op">=</span>'
+      +chip('chip-y',A+'×'+C,B+'×'+D,'#b45309','#b45309',17,54)
+      +'<span class="formula-op">=</span>'
+      +chip('chip-t',d.resNum,d.resDen,'#0f766e','#0f766e',20,40)
+      +(d.resNum!==d.sNum
+        ?'<span class="formula-op">=</span>'+chip('chip-t2',d.sNum,d.sDen,'#134e4a','#134e4a',22,40)
+        :'');
+    document.getElementById('formula-tip').textContent=
+      '重點：分子相乘（'+A+'×'+C+'='+d.resNum+'）= 交疊格數；'
+      +'分母相乘（'+B+'×'+D+'='+d.resDen+'）= 每個單位正方形的總格數。';
+  } else {
+    formulaArea.style.display='none';
+  }
+
+  // 圖例
+  var legendArea=document.getElementById('legend-area');
+  if(step>=1&&step<MAX_STEP){
+    legendArea.style.display='flex';
+    var html='';
+    if(step<=2)
+      html+='<div class="legend-item">'
+        +'<div class="legend-dot" style="background:#4ADE80;border:1px solid #16a34a;"></div>'
+        +'<span>綠色 = 被乘數 '+A+'/'+B+'</span></div>';
+    if(step===2)
+      html+='<div class="legend-item">'
+        +'<div class="legend-dot" style="background:#3B82F6;border:1px solid #1d4ed8;"></div>'
+        +'<span>藍色 = 乘數（共 '+C+' 行，超過 '+D+' 行則向下延伸）</span></div>';
+    if(step===3)
+      html+='<div class="legend-item">'
+        +'<div class="legend-dot" style="background:#3B82F6;border:1px solid #1d4ed8;"></div>'
+        +'<span>藍色 = 乘積格數（'+d.resNum+' / '+d.resDen+'）</span></div>';
+    legendArea.innerHTML=html;
+  } else {
+    legendArea.style.display='none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  初始化
+// ══════════════════════════════════════════════════════════════
+render();
+</script>
+</body>
+</html>
